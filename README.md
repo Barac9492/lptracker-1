@@ -18,6 +18,7 @@ A Next.js 15 application for tracking Limited Partner (LP) signals and prioritiz
 - 💡 Smart message angle suggestions
 - 📨 Outreach logging and history
 - ⏰ Daily cron job with optional Slack notifications
+- 🎯 **Automated Signal Catching** - Track LP activity from RSS, news APIs, and webhooks
 
 ## Getting Started
 
@@ -176,7 +177,51 @@ npm run prisma:generate  # Generate Prisma client
 npm run prisma:migrate   # Run database migrations
 npm run prisma:studio    # Open Prisma Studio
 npm run seed             # Seed database with sample data
+npm run catch-signals    # Run signal catching automation
 ```
+
+## 🎯 Automated Signal Catching
+
+Automatically track LP activity from news sources, RSS feeds, and webhooks.
+
+### Quick Start
+
+```bash
+# Run signal catcher manually
+npm run catch-signals
+```
+
+### Features
+
+- **RSS Monitoring** - Tracks Google News, Pensions & Investments, and custom feeds
+- **News API Integration** - Optional NewsAPI.org integration for broader coverage
+- **Webhook Endpoint** - Receive signals from Zapier, Make.com, or custom scripts
+- **Auto-tagging** - Classifies signals (funding, hiring, partnership, etc.)
+- **Smart Weighting** - Prioritizes high-value events automatically
+
+### Setup Automation
+
+**Cron (Linux/Mac):**
+```bash
+# Run every 30 minutes
+*/30 * * * * cd /path/to/lpint && npm run catch-signals
+```
+
+**Webhook Integration:**
+```bash
+# POST to webhook endpoint
+curl -X POST http://localhost:3000/api/webhook \
+  -H "Authorization: Bearer your-secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "lpName": "CalPERS (California Public Employees Retirement System)",
+    "summary": "Announces $500M VC commitment",
+    "tags": ["funding", "venture-capital"],
+    "weight": 2.0
+  }'
+```
+
+**📖 Full Documentation:** See [SIGNAL_CATCHING.md](./SIGNAL_CATCHING.md) for complete setup guide.
 
 ## Deployment
 

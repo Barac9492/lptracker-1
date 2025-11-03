@@ -10,14 +10,17 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "catch-signals": "tsx scripts/catch-signals.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "axios": "^1.13.1",
     "next": "15.0.2",
     "papaparse": "^5.4.1",
     "react": "^19.0.0-rc.0",
-    "react-dom": "^19.0.0-rc.0"
+    "react-dom": "^19.0.0-rc.0",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@types/node": "^20",
