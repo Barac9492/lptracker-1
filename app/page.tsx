@@ -32,7 +32,7 @@ export default async function HomePage() {
               No LPs yet. <Link href="/upload" className="text-blue-600 hover:underline">Upload CSV</Link> to get started.
             </div>
           ) : (
-            topLPs.map((lp, index) => (
+            topLPs.map((lp: typeof topLPs[0], index: number) => (
               <Link key={lp.id} href={`/lp/${lp.id}`} className="card hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-2">
                   <span className="text-3xl font-bold text-blue-600">#{index + 1}</span>
@@ -47,7 +47,7 @@ export default async function HomePage() {
                 )}
                 {lp.strategy.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {lp.strategy.map(s => (
+                    {lp.strategy.map((s: string) => (
                       <span key={s} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
                         {s}
                       </span>
@@ -82,7 +82,7 @@ export default async function HomePage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {recentLPs.map(lp => (
+              {recentLPs.map((lp: typeof recentLPs[0]) => (
                 <tr key={lp.id} className="hover:bg-gray-50">
                   <td>
                     <Link href={`/lp/${lp.id}`} className="text-blue-600 hover:underline font-medium">
@@ -96,7 +96,7 @@ export default async function HomePage() {
                   <td className="text-gray-600">{lp.geo || '-'}</td>
                   <td>
                     <div className="flex flex-wrap gap-1">
-                      {lp.strategy.slice(0, 2).map(s => (
+                      {lp.strategy.slice(0, 2).map((s: string) => (
                         <span key={s} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
                           {s}
                         </span>

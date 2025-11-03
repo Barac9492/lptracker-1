@@ -1,4 +1,15 @@
-import { Signal } from '@prisma/client'
+/**
+ * Signal type definition
+ */
+interface Signal {
+  id: string
+  lpId: string
+  summary: string
+  tags: string[]
+  url: string | null
+  weight: number
+  createdAt: Date
+}
 
 /**
  * Calculate LP score from their signals

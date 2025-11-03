@@ -5,9 +5,10 @@ import { OutreachForm } from './OutreachForm'
 
 export const dynamic = 'force-dynamic'
 
-export default async function LPDetailPage({ params }: { params: { id: string } }) {
+export default async function LPDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const lp = await prisma.lP.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       signals: {
         orderBy: { createdAt: 'desc' },
@@ -59,7 +60,7 @@ export default async function LPDetailPage({ params }: { params: { id: string } 
             <dt className="text-sm font-medium text-gray-500 mb-2">Investment Strategy</dt>
             <dd className="flex flex-wrap gap-2">
               {lp.strategy.length > 0 ? (
-                lp.strategy.map(s => (
+                lp.strategy.map((s: string) => (
                   <span key={s} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded">
                     {s}
                   </span>
@@ -89,7 +90,7 @@ export default async function LPDetailPage({ params }: { params: { id: string } 
           <p className="text-gray-500">No signals recorded yet.</p>
         ) : (
           <div className="space-y-4">
-            {lp.signals.map(signal => (
+            {lp.signals.map((signal: typeof lp.signals[0]) => (
               <div key={signal.id} className="border-l-4 border-blue-500 pl-4 py-2">
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-sm text-gray-900">{signal.summary}</p>
@@ -99,7 +100,7 @@ export default async function LPDetailPage({ params }: { params: { id: string } 
                 </div>
                 {signal.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2">
-                    {signal.tags.map(tag => (
+                    {signal.tags.map((tag: string) => (
                       <span key={tag} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
                         {tag}
                       </span>
@@ -135,7 +136,7 @@ export default async function LPDetailPage({ params }: { params: { id: string } 
             Past Outreaches ({lp.outreaches.length})
           </h2>
           <div className="space-y-3">
-            {lp.outreaches.map(outreach => (
+            {lp.outreaches.map((outreach: typeof lp.outreaches[0]) => (
               <div key={outreach.id} className="border-l-2 border-gray-300 pl-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-medium text-gray-500 uppercase">

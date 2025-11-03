@@ -4,7 +4,8 @@
  * Signal Catching Automation Script
  *
  * This script fetches signals from various sources and ingests them
- * Run via cron: */30 * * * * cd /path/to/lpint && tsx scripts/catch-signals.ts
+ * Run via cron: (star)/30 * * * * cd /path/to/lpint && tsx scripts/catch-signals.ts
+ * Replace (star) with actual asterisk in crontab
  */
 
 import { fetchRSSSignals, LP_RSS_FEEDS } from '../lib/signal-catchers/rss-monitor'

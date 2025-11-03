@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
           {
             type: 'divider',
           },
-          ...top3.flatMap((lp, index) => [
+          ...top3.flatMap((lp: typeof top3[0], index: number) => [
             {
               type: 'section',
               text: {
