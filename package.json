@@ -11,7 +11,9 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
-    "catch-signals": "tsx scripts/catch-signals.ts"
+    "catch-signals": "tsx scripts/catch-signals.ts",
+    "dev-agent": "tsx scripts/dev-agent.ts",
+    "iterate": "tsx scripts/iterate.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
