@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db, supabase } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,28 +7,27 @@ export async function GET() {
   const checks: Record<string, any> = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    databaseUrl: process.env.DATABASE_URL ? 'Set' : 'Missing',
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Set' : 'Missing',
+    supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Set (hidden)' : 'Missing',
   }
 
-  // Test Prisma client
+  // Test Supabase connection
   try {
-    await prisma.$connect()
-    checks.prismaClient = 'Connected'
-
-    // Try a simple query
-    const count = await prisma.lP.count()
+    // Test database connection
+    const count = await db.lp.count()
     checks.lpCount = count
     checks.database = 'OK'
+    checks.supabaseClient = 'Connected'
   } catch (error: any) {
-    checks.prismaClient = 'Failed'
+    checks.supabaseClient = 'Failed'
     checks.database = 'ERROR'
     checks.error = error.message
     checks.errorCode = error.code
-  } finally {
-    await prisma.$disconnect()
+    checks.errorDetails = error.details || null
+    checks.errorHint = error.hint || null
   }
 
-  const allOk = checks.database === 'OK' && checks.prismaClient === 'Connected'
+  const allOk = checks.database === 'OK' && checks.supabaseClient === 'Connected'
 
   return NextResponse.json(checks, {
     status: allOk ? 200 : 500

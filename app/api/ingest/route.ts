@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 import { scoreFromSignals, suggestAngle } from '@/lib/scoring'
 import {
   validateSignal,
@@ -29,18 +29,17 @@ export async function POST(req: NextRequest) {
     const { lpName, summary, tags, url, weight } = validationResult.normalizedData!
 
     // Step 2: Fuzzy match LP name to existing LPs
-    const existingLPs = await prisma.lP.findMany({
-      select: { id: true, name: true },
-    })
+    const existingLPs = await db.lp.findMany({})
+    const lpList = existingLPs.map(lp => ({ id: lp.id, name: lp.name }))
 
-    const matchResult = fuzzyMatchLP(lpName, existingLPs)
+    const matchResult = fuzzyMatchLP(lpName, lpList)
 
     let lp
     let lpMatchInfo
 
     if (matchResult.matched) {
       // Use matched LP
-      lp = await prisma.lP.findUnique({
+      lp = await db.lp.findUnique({
         where: { id: matchResult.lpId },
       })
       lpMatchInfo = {
@@ -51,7 +50,7 @@ export async function POST(req: NextRequest) {
       }
     } else {
       // Create new LP
-      lp = await prisma.lP.create({
+      lp = await db.lp.create({
         data: { name: lpName },
       })
       lpMatchInfo = {
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 3: Check for duplicate signals
-    const existingSignals = await prisma.signal.findMany({
+    const existingSignals = await db.signal.findMany({
       where: { lpId: lp.id },
       orderBy: { createdAt: 'desc' },
       take: 50, // Check last 50 signals
@@ -93,7 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 4: Create the signal
-    const signal = await prisma.signal.create({
+    const signal = await db.signal.create({
       data: {
         lpId: lp.id,
         summary,
@@ -104,14 +103,14 @@ export async function POST(req: NextRequest) {
     })
 
     // Step 5: Recompute score and message angle
-    const allSignals = await prisma.signal.findMany({
+    const allSignals = await db.signal.findMany({
       where: { lpId: lp.id },
     })
 
     const newScore = scoreFromSignals(allSignals)
     const newAngle = suggestAngle(allSignals)
 
-    const updatedLP = await prisma.lP.update({
+    const updatedLP = await db.lp.update({
       where: { id: lp.id },
       data: {
         score: newScore,

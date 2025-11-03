@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { OutreachForm } from './OutreachForm'
@@ -7,15 +7,11 @@ export const dynamic = 'force-dynamic'
 
 export default async function LPDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const lp = await prisma.lP.findUnique({
+  const lp = await db.lp.findUnique({
     where: { id },
     include: {
-      signals: {
-        orderBy: { createdAt: 'desc' },
-      },
-      outreaches: {
-        orderBy: { sentAt: 'desc' },
-      },
+      signals: true,
+      outreaches: true,
     },
   })
 
@@ -84,13 +80,13 @@ export default async function LPDetailPage({ params }: { params: Promise<{ id: s
       {/* Signals */}
       <section className="card">
         <h2 className="text-xl font-semibold mb-4">
-          Signals ({lp.signals.length})
+          Signals ({lp.signals?.length || 0})
         </h2>
-        {lp.signals.length === 0 ? (
+        {!lp.signals || lp.signals.length === 0 ? (
           <p className="text-gray-500">No signals recorded yet.</p>
         ) : (
           <div className="space-y-4">
-            {lp.signals.map((signal: typeof lp.signals[0]) => (
+            {lp.signals.map((signal: any) => (
               <div key={signal.id} className="border-l-4 border-blue-500 pl-4 py-2">
                 <div className="flex items-start justify-between mb-2">
                   <p className="text-sm text-gray-900">{signal.summary}</p>
@@ -130,13 +126,13 @@ export default async function LPDetailPage({ params }: { params: Promise<{ id: s
       </section>
 
       {/* Past Outreaches */}
-      {lp.outreaches.length > 0 && (
+      {lp.outreaches && lp.outreaches.length > 0 && (
         <section className="card">
           <h2 className="text-xl font-semibold mb-4">
-            Past Outreaches ({lp.outreaches.length})
+            Past Outreaches ({lp.outreaches?.length || 0})
           </h2>
           <div className="space-y-3">
-            {lp.outreaches.map((outreach: typeof lp.outreaches[0]) => (
+            {lp.outreaches.map((outreach: any) => (
               <div key={outreach.id} className="border-l-2 border-gray-300 pl-4">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-medium text-gray-500 uppercase">

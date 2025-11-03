@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
@@ -10,13 +10,13 @@ export default async function HomePage() {
 
   try {
     // Get top 3 LPs by score
-    topLPs = await prisma.lP.findMany({
+    topLPs = await db.lp.findMany({
       orderBy: { score: 'desc' },
       take: 3,
     })
 
     // Get latest 50 LPs
-    recentLPs = await prisma.lP.findMany({
+    recentLPs = await db.lp.findMany({
       orderBy: { updatedAt: 'desc' },
       take: 50,
     })
@@ -34,8 +34,8 @@ export default async function HomePage() {
           <div className="bg-white p-4 rounded border border-red-200">
             <p className="text-sm font-semibold mb-2">Troubleshooting Steps:</p>
             <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
-              <li>Check that DATABASE_URL is set in Vercel environment variables</li>
-              <li>Verify the database connection string is correct</li>
+              <li>Check that NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set</li>
+              <li>Verify your Supabase project is active and accessible</li>
               <li>Ensure database tables are created (run schema.sql in Supabase)</li>
               <li>Check <Link href="/api/health" className="text-blue-600 underline">/api/health</Link> for detailed diagnostics</li>
             </ol>
