@@ -4,17 +4,46 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  // Get top 3 LPs by score
-  const topLPs = await prisma.lP.findMany({
-    orderBy: { score: 'desc' },
-    take: 3,
-  })
+  let topLPs: any[] = []
+  let recentLPs: any[] = []
+  let error: string | null = null
 
-  // Get latest 50 LPs
-  const recentLPs = await prisma.lP.findMany({
-    orderBy: { updatedAt: 'desc' },
-    take: 50,
-  })
+  try {
+    // Get top 3 LPs by score
+    topLPs = await prisma.lP.findMany({
+      orderBy: { score: 'desc' },
+      take: 3,
+    })
+
+    // Get latest 50 LPs
+    recentLPs = await prisma.lP.findMany({
+      orderBy: { updatedAt: 'desc' },
+      take: 50,
+    })
+  } catch (e: any) {
+    console.error('Database error:', e)
+    error = e.message || 'Failed to connect to database'
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="card border-red-300 bg-red-50">
+          <h1 className="text-2xl font-bold text-red-900 mb-4">⚠️ Database Connection Error</h1>
+          <p className="text-red-700 mb-4">{error}</p>
+          <div className="bg-white p-4 rounded border border-red-200">
+            <p className="text-sm font-semibold mb-2">Troubleshooting Steps:</p>
+            <ol className="text-sm text-gray-700 space-y-2 list-decimal list-inside">
+              <li>Check that DATABASE_URL is set in Vercel environment variables</li>
+              <li>Verify the database connection string is correct</li>
+              <li>Ensure database tables are created (run schema.sql in Supabase)</li>
+              <li>Check <Link href="/api/health" className="text-blue-600 underline">/api/health</Link> for detailed diagnostics</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-8">
