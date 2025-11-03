@@ -1,4 +1,5 @@
 import Parser from 'rss-parser'
+import { summarizeError } from '../utils/error'
 
 export interface RSSSignal {
   lpName: string
@@ -26,8 +27,8 @@ export async function fetchRSSSignals(feedUrl: string): Promise<RSSSignal[]> {
         signals.push(signal)
       }
     }
-  } catch (error) {
-    console.error(`Error fetching RSS feed ${feedUrl}:`, error)
+  } catch (error: unknown) {
+    console.error(`Error fetching RSS feed ${feedUrl}: ${summarizeError(error)}`)
   }
 
   return signals

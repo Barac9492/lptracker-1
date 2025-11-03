@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { summarizeError } from '../utils/error'
 
 export interface NewsSignal {
   lpName: string
@@ -193,8 +194,8 @@ export async function fetchGoogleNewsSignals(query: string): Promise<NewsSignal[
         publishedAt: new Date(item.pubDate || Date.now()),
       })
     }
-  } catch (error) {
-    console.error('Error fetching Google News:', error)
+  } catch (error: unknown) {
+    console.error(`Error fetching Google News: ${summarizeError(error)}`)
   }
 
   return signals
