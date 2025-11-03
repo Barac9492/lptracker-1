@@ -11,44 +11,44 @@ async function main() {
   await prisma.signal.deleteMany()
   await prisma.lP.deleteMany()
 
-  // Create LPs
+  // Create LPs (Limited Partners - investors in VC funds)
   const lp1 = await prisma.lP.create({
     data: {
-      name: 'Sequoia Capital',
-      contactName: 'Sarah Chen',
-      email: 'sarah@sequoia.com',
-      geo: 'USA',
-      strategy: ['Growth', 'Enterprise SaaS', 'B2B'],
+      name: 'CalPERS (California Public Employees Retirement System)',
+      contactName: 'Jennifer Martinez',
+      email: 'jmartinez@calpers.ca.gov',
+      geo: 'USA (California)',
+      strategy: ['Venture Capital', 'Growth Equity', 'Infrastructure'],
     },
   })
 
   const lp2 = await prisma.lP.create({
     data: {
-      name: 'Andreessen Horowitz',
-      contactName: 'Michael Rodriguez',
-      email: 'michael@a16z.com',
-      geo: 'USA',
-      strategy: ['Early Stage', 'Crypto', 'Consumer'],
+      name: 'Yale Endowment',
+      contactName: 'David Chen',
+      email: 'david.chen@yale.edu',
+      geo: 'USA (Connecticut)',
+      strategy: ['Venture Capital', 'Private Equity', 'Absolute Return'],
     },
   })
 
   const lp3 = await prisma.lP.create({
     data: {
-      name: 'Index Ventures',
-      contactName: 'Emma Thompson',
-      email: 'emma@indexventures.com',
-      geo: 'Europe',
-      strategy: ['Series A', 'Fintech', 'Marketplaces'],
+      name: 'Ontario Teachers Pension Plan',
+      contactName: 'Sarah Thompson',
+      email: 'sthompson@otpp.com',
+      geo: 'Canada',
+      strategy: ['Venture Capital', 'Growth Equity', 'Public Markets'],
     },
   })
 
-  // Create signals for Sequoia
+  // Create signals for CalPERS
   const seq1 = await prisma.signal.create({
     data: {
       lpId: lp1.id,
-      summary: 'Sequoia announces $2.8B new fund focused on AI infrastructure',
-      tags: ['funding', 'AI', 'infrastructure'],
-      url: 'https://example.com/sequoia-fund',
+      summary: 'CalPERS announces $2.5B increase in venture capital allocation',
+      tags: ['funding', 'venture-capital', 'allocation'],
+      url: 'https://example.com/calpers-vc',
       weight: 2.0,
     },
   })
@@ -56,8 +56,8 @@ async function main() {
   const seq2 = await prisma.signal.create({
     data: {
       lpId: lp1.id,
-      summary: 'Sarah Chen speaking at TechCrunch Disrupt about future of enterprise software',
-      tags: ['speaking', 'enterprise', 'thought-leadership'],
+      summary: 'Jennifer Martinez speaking at Institutional Investor Summit about alternative investments',
+      tags: ['speaking', 'alternatives', 'thought-leadership'],
       weight: 1.5,
     },
   })
@@ -65,19 +65,19 @@ async function main() {
   const seq3 = await prisma.signal.create({
     data: {
       lpId: lp1.id,
-      summary: 'Sequoia portfolio company exits for $4.2B',
-      tags: ['acquisition', 'exit', 'success'],
+      summary: 'CalPERS reports 15% returns on venture portfolio',
+      tags: ['performance', 'returns', 'success'],
       weight: 1.0,
     },
   })
 
-  // Create signals for a16z
+  // Create signals for Yale Endowment
   const a16z1 = await prisma.signal.create({
     data: {
       lpId: lp2.id,
-      summary: 'a16z launches crypto research initiative with MIT',
-      tags: ['partnership', 'crypto', 'research'],
-      url: 'https://example.com/a16z-mit',
+      summary: 'Yale partners with Stanford on emerging manager program',
+      tags: ['partnership', 'emerging-managers', 'education'],
+      url: 'https://example.com/yale-stanford',
       weight: 1.5,
     },
   })
@@ -85,18 +85,18 @@ async function main() {
   const a16z2 = await prisma.signal.create({
     data: {
       lpId: lp2.id,
-      summary: 'Hiring 5 new partners for consumer investments',
-      tags: ['hiring', 'expansion', 'consumer'],
+      summary: 'Hiring new Senior Investment Associate for VC investments',
+      tags: ['hiring', 'expansion', 'venture-capital'],
       weight: 1.2,
     },
   })
 
-  // Create signals for Index
+  // Create signals for Ontario Teachers
   const idx1 = await prisma.signal.create({
     data: {
       lpId: lp3.id,
-      summary: 'Index Ventures opens new office in Berlin',
-      tags: ['expansion', 'Europe', 'office'],
+      summary: 'Ontario Teachers expanding venture capital allocation in North America',
+      tags: ['expansion', 'venture-capital', 'allocation'],
       weight: 1.0,
     },
   })
@@ -104,37 +104,37 @@ async function main() {
   const idx2 = await prisma.signal.create({
     data: {
       lpId: lp3.id,
-      summary: 'Emma Thompson wins "Best VC" award at European Tech Summit',
-      tags: ['award', 'recognition', 'Europe'],
+      summary: 'Sarah Thompson recognized as top pension fund CIO by Institutional Investor',
+      tags: ['award', 'recognition', 'leadership'],
       weight: 0.8,
     },
   })
 
   // Compute scores and angles
-  const sequoiaSignals = [seq1, seq2, seq3]
+  const calpersSignals = [seq1, seq2, seq3]
   await prisma.lP.update({
     where: { id: lp1.id },
     data: {
-      score: scoreFromSignals(sequoiaSignals),
-      messageAngle: suggestAngle(sequoiaSignals),
+      score: scoreFromSignals(calpersSignals),
+      messageAngle: suggestAngle(calpersSignals),
     },
   })
 
-  const a16zSignals = [a16z1, a16z2]
+  const yaleSignals = [a16z1, a16z2]
   await prisma.lP.update({
     where: { id: lp2.id },
     data: {
-      score: scoreFromSignals(a16zSignals),
-      messageAngle: suggestAngle(a16zSignals),
+      score: scoreFromSignals(yaleSignals),
+      messageAngle: suggestAngle(yaleSignals),
     },
   })
 
-  const indexSignals = [idx1, idx2]
+  const ontarioSignals = [idx1, idx2]
   await prisma.lP.update({
     where: { id: lp3.id },
     data: {
-      score: scoreFromSignals(indexSignals),
-      messageAngle: suggestAngle(indexSignals),
+      score: scoreFromSignals(ontarioSignals),
+      messageAngle: suggestAngle(ontarioSignals),
     },
   })
 
