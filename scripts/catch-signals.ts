@@ -9,6 +9,7 @@
 
 import { fetchRSSSignals, LP_RSS_FEEDS } from '../lib/signal-catchers/rss-monitor'
 import { fetchNewsAPISignals, fetchGoogleNewsSignals } from '../lib/signal-catchers/news-api'
+import { fetchLinkedInSignals, TARGET_LPS_LINKEDIN } from '../lib/signal-catchers/linkedin-monitor'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -122,6 +123,32 @@ async function main() {
     } catch (error) {
       console.error(`  Error with query "${query}":`, error)
     }
+  }
+
+  // 4. Fetch from LinkedIn (if API key provided)
+  const apifyKey = process.env.APIFY_API_KEY
+  if (apifyKey) {
+    console.log('\n🔗 Fetching from LinkedIn...')
+    try {
+      const signals = await fetchLinkedInSignals(TARGET_LPS_LINKEDIN)
+      console.log(`  Found ${signals.length} potential signals`)
+
+      for (const signal of signals) {
+        totalSignals++
+        const success = await ingestSignal({
+          lpName: signal.lpName,
+          summary: signal.summary,
+          tags: signal.tags,
+          url: signal.url,
+          weight: signal.weight,
+        })
+        if (success) newSignals++
+      }
+    } catch (error) {
+      console.error('  Error with LinkedIn scraping:', error)
+    }
+  } else {
+    console.log('\n🔗 LinkedIn scraping disabled (no APIFY_API_KEY)')
   }
 
   // Summary

@@ -72,6 +72,13 @@ crontab -e
 - Free tier: 100 requests/day
 - Add to `.env`: `NEWS_API_KEY="your-key-here"`
 
+**4. LinkedIn (via Apify)**
+- Get API key: https://apify.com/
+- Free tier: $5/month credit
+- Tracks: Job postings, company posts, team changes
+- Add to `.env`: `APIFY_API_KEY="your-key-here"`
+- Module: `lib/signal-catchers/linkedin-monitor.ts`
+
 ---
 
 ## 🔧 Configuration
