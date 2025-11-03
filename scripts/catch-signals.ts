@@ -11,6 +11,7 @@
 import { fetchRSSSignals, LP_RSS_FEEDS } from '../lib/signal-catchers/rss-monitor'
 import { fetchNewsAPISignals, fetchGoogleNewsSignals } from '../lib/signal-catchers/news-api'
 import { fetchLinkedInSignals, TARGET_LPS_LINKEDIN } from '../lib/signal-catchers/linkedin-monitor'
+import { formatErrorWithContext } from '../lib/utils/error'
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
@@ -29,8 +30,8 @@ async function ingestSignal(signal: any) {
     }
 
     return true
-  } catch (error) {
-    console.error('Error ingesting signal:', error)
+  } catch (error: unknown) {
+    console.error(formatErrorWithContext('Error ingesting signal', error))
     return false
   }
 }
@@ -61,8 +62,8 @@ async function main() {
         })
         if (success) newSignals++
       }
-    } catch (error) {
-      console.error(`  Error with feed ${feedUrl}:`, error)
+    } catch (error: unknown) {
+      console.error(formatErrorWithContext(`  Error with feed ${feedUrl}`, error))
     }
   }
 
@@ -85,8 +86,8 @@ async function main() {
         })
         if (success) newSignals++
       }
-    } catch (error) {
-      console.error('  Error with NewsAPI:', error)
+    } catch (error: unknown) {
+      console.error(formatErrorWithContext('  Error with NewsAPI', error))
     }
   } else {
     console.log('\n📡 NewsAPI key not found, skipping...')
@@ -121,8 +122,8 @@ async function main() {
 
       // Rate limiting: wait 2 seconds between queries
       await new Promise(resolve => setTimeout(resolve, 2000))
-    } catch (error) {
-      console.error(`  Error with query "${query}":`, error)
+    } catch (error: unknown) {
+      console.error(formatErrorWithContext(`  Error with query "${query}"`, error))
     }
   }
 
@@ -145,8 +146,8 @@ async function main() {
         })
         if (success) newSignals++
       }
-    } catch (error) {
-      console.error('  Error with LinkedIn scraping:', error)
+    } catch (error: unknown) {
+      console.error(formatErrorWithContext('  Error with LinkedIn scraping', error))
     }
   } else {
     console.log('\n🔗 LinkedIn scraping disabled (no APIFY_API_KEY)')
@@ -169,8 +170,8 @@ async function main() {
           text: `🔔 Signal Catch Update: ${newSignals} new signals ingested`,
         }),
       })
-    } catch (error) {
-      console.error('Failed to send Slack notification:', error)
+    } catch (error: unknown) {
+      console.error(formatErrorWithContext('Failed to send Slack notification', error))
     }
   }
 }
