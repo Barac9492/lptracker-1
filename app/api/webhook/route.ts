@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { scoreFromSignals, suggestAngle } from '@/lib/scoring'
+import {
+  validateSignal,
+  fuzzyMatchLP,
+  detectDuplicate,
+} from '@/lib/validators/signal-validator'
 
 /**
  * Webhook endpoint for receiving signals from external sources
@@ -40,38 +45,101 @@ export async function POST(req: NextRequest) {
     const results = []
 
     for (const signalData of signals) {
-      const { lpName, summary, tags, url, weight, source } = signalData
-
-      if (!lpName || !summary) {
-        results.push({
-          success: false,
-          error: 'lpName and summary are required',
-          data: signalData,
-        })
-        continue
-      }
-
       try {
-        // Find or create LP
-        let lp = await prisma.lP.findUnique({ where: { name: lpName } })
-        if (!lp) {
+        // Step 1: Validate the signal
+        const validationResult = validateSignal(signalData)
+
+        if (!validationResult.valid) {
+          results.push({
+            success: false,
+            error: 'Signal validation failed',
+            errors: validationResult.errors,
+            warnings: validationResult.warnings,
+            data: signalData,
+          })
+          continue
+        }
+
+        // Use normalized data from validation
+        const { lpName, summary, tags, url, weight } = validationResult.normalizedData!
+
+        // Step 2: Fuzzy match LP name to existing LPs
+        const existingLPs = await prisma.lP.findMany({
+          select: { id: true, name: true },
+        })
+
+        const matchResult = fuzzyMatchLP(lpName, existingLPs)
+
+        let lp
+        let lpMatchInfo
+
+        if (matchResult.matched) {
+          // Use matched LP
+          lp = await prisma.lP.findUnique({
+            where: { id: matchResult.lpId },
+          })
+          lpMatchInfo = {
+            matched: true,
+            originalName: lpName,
+            matchedName: matchResult.lpName,
+            confidence: matchResult.confidence,
+          }
+        } else {
+          // Create new LP
           lp = await prisma.lP.create({
             data: { name: lpName },
           })
+          lpMatchInfo = {
+            matched: false,
+            originalName: lpName,
+            created: true,
+          }
         }
 
-        // Create signal
+        if (!lp) {
+          results.push({
+            success: false,
+            error: 'Failed to find or create LP',
+            data: signalData,
+          })
+          continue
+        }
+
+        // Step 3: Check for duplicate signals
+        const existingSignals = await prisma.signal.findMany({
+          where: { lpId: lp.id },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+        })
+
+        const duplicateCheck = detectDuplicate(
+          { lpName: lp.name, summary, tags, url, weight },
+          existingSignals
+        )
+
+        if (duplicateCheck.isDuplicate) {
+          results.push({
+            success: false,
+            error: 'Duplicate signal detected',
+            reason: duplicateCheck.reason,
+            warnings: validationResult.warnings,
+            data: signalData,
+          })
+          continue
+        }
+
+        // Step 4: Create signal
         const signal = await prisma.signal.create({
           data: {
             lpId: lp.id,
             summary,
-            tags: Array.isArray(tags) ? tags : [],
+            tags,
             url: url || null,
-            weight: weight || 1.0,
+            weight,
           },
         })
 
-        // Recompute score
+        // Step 5: Recompute score
         const allSignals = await prisma.signal.findMany({
           where: { lpId: lp.id },
         })
@@ -95,6 +163,10 @@ export async function POST(req: NextRequest) {
             lpName: lp.name,
             summary: signal.summary,
             score: updatedLP.score,
+          },
+          validation: {
+            warnings: validationResult.warnings,
+            lpMatch: lpMatchInfo,
           },
         })
       } catch (error: any) {

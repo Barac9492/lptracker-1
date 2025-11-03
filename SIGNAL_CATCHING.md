@@ -81,6 +81,167 @@ crontab -e
 
 ---
 
+## ✅ Signal Validation System
+
+The system automatically validates all incoming signals to ensure data quality and prevent duplicate/invalid entries.
+
+### What Gets Validated
+
+**Required Fields:**
+- ✅ `lpName` - Must be a string, at least 3 characters
+- ✅ `summary` - Must be a string, at least 10 characters
+- ✅ `tags` - Must be an array with at least one tag
+- ✅ `weight` - Must be a number between 0 and 5
+
+**Type Checking:**
+- Ensures all fields are the correct data type
+- Validates URL format (must be HTTP/HTTPS)
+- Checks tag array contains only strings
+
+**Duplicate Detection:**
+- Exact URL matching (prevents same article twice)
+- Similar summary detection (>80% match within 30 days)
+- Protects against accidental re-ingestion
+
+**Fuzzy LP Matching:**
+- Automatically matches variations of LP names
+- "CalPERS" → "California Public Employees Retirement System"
+- Confidence score > 85% = auto-match
+- Prevents duplicate LP records
+
+### Validation Examples
+
+**Valid Signal:**
+```json
+{
+  "lpName": "CalPERS (California Public Employees Retirement System)",
+  "summary": "CalPERS announces $500M allocation to venture capital",
+  "tags": ["funding", "venture-capital"],
+  "url": "https://example.com/article",
+  "weight": 2.5
+}
+```
+✅ Passes all checks
+
+**Invalid Signal (will be rejected):**
+```json
+{
+  "lpName": "CP",  // Too short
+  "summary": "News",  // Too short
+  "tags": [],  // Empty array
+  "url": "not-a-url",  // Invalid format
+  "weight": 10  // Out of range
+}
+```
+❌ Errors:
+- lpName must be at least 3 characters
+- summary is very short (< 10 characters)
+- tags array is required and must have at least one tag
+- url must be a valid HTTP or HTTPS URL
+- weight must be between 0 and 5
+
+### Validation Responses
+
+**Successful ingestion:**
+```json
+{
+  "success": true,
+  "signal": { ... },
+  "lp": { ... },
+  "validation": {
+    "warnings": [],
+    "lpMatch": {
+      "matched": true,
+      "originalName": "CalPERS",
+      "matchedName": "California Public Employees Retirement System",
+      "confidence": 0.89
+    }
+  }
+}
+```
+
+**Validation failure:**
+```json
+{
+  "error": "Signal validation failed",
+  "errors": [
+    "weight must be between 0 and 5",
+    "url must be a valid HTTP or HTTPS URL"
+  ],
+  "warnings": [
+    "summary is very short (< 10 characters)"
+  ]
+}
+```
+
+**Duplicate detected:**
+```json
+{
+  "error": "Duplicate signal detected",
+  "reason": "Exact URL match",
+  "existingSignal": { ... }
+}
+```
+
+### Testing Validation
+
+Run comprehensive validation tests:
+
+```bash
+npx tsx scripts/test-validation.ts
+```
+
+This tests:
+- ✅ Valid signals
+- ✅ Missing required fields
+- ✅ Invalid weight ranges
+- ✅ Invalid URL formats
+- ✅ Tag normalization
+- ✅ Fuzzy LP matching
+- ✅ Duplicate detection
+- ✅ Edge cases
+
+### Validation Warnings
+
+The system provides helpful warnings for suspicious data:
+
+- **Low weight (< 0.5):** Signal might not be important enough
+- **High weight (> 3):** Verify signal importance is correct
+- **Short summary:** Consider adding more context
+- **Non-LP name:** Name doesn't match pension/endowment patterns
+- **Duplicate tags:** System will auto-deduplicate
+
+Warnings don't block ingestion, but help improve data quality.
+
+### Integration Points
+
+Validation is automatically applied at:
+1. **POST /api/ingest** - Direct signal ingestion
+2. **POST /api/webhook** - External integrations (Zapier, etc.)
+3. All signal catchers use these endpoints, so all signals are validated
+
+### Customizing Validation
+
+Edit `lib/validators/signal-validator.ts` to adjust rules:
+
+```typescript
+// Adjust weight range
+if (signal.weight < 0 || signal.weight > 5) {
+  errors.push('weight must be between 0 and 5')
+}
+
+// Adjust LP name patterns
+const hasValidPattern = /pension|endowment|fund|investment/i.test(signal.lpName)
+
+// Adjust duplicate threshold
+const similarity = calculateStringSimilarity(newSummary, existingSummary)
+if (similarity > 0.8) {  // Change threshold here
+  return { isDuplicate: true }
+}
+```
+
+---
+
 ## 🔧 Configuration
 
 ### Tracked LPs

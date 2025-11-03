@@ -1,39 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { scoreFromSignals, suggestAngle } from '@/lib/scoring'
+import {
+  validateSignal,
+  fuzzyMatchLP,
+  detectDuplicate,
+} from '@/lib/validators/signal-validator'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { lpName, summary, tags, url, weight } = body
 
-    if (!lpName || !summary) {
+    // Step 1: Validate the signal
+    const validationResult = validateSignal(body)
+
+    if (!validationResult.valid) {
       return NextResponse.json(
-        { error: 'lpName and summary are required' },
+        {
+          error: 'Signal validation failed',
+          errors: validationResult.errors,
+          warnings: validationResult.warnings,
+        },
         { status: 400 }
       )
     }
 
-    // Find or create LP
-    let lp = await prisma.lP.findUnique({ where: { name: lpName } })
-    if (!lp) {
+    // Use normalized data from validation
+    const { lpName, summary, tags, url, weight } = validationResult.normalizedData!
+
+    // Step 2: Fuzzy match LP name to existing LPs
+    const existingLPs = await prisma.lP.findMany({
+      select: { id: true, name: true },
+    })
+
+    const matchResult = fuzzyMatchLP(lpName, existingLPs)
+
+    let lp
+    let lpMatchInfo
+
+    if (matchResult.matched) {
+      // Use matched LP
+      lp = await prisma.lP.findUnique({
+        where: { id: matchResult.lpId },
+      })
+      lpMatchInfo = {
+        matched: true,
+        originalName: lpName,
+        matchedName: matchResult.lpName,
+        confidence: matchResult.confidence,
+      }
+    } else {
+      // Create new LP
       lp = await prisma.lP.create({
         data: { name: lpName },
       })
+      lpMatchInfo = {
+        matched: false,
+        originalName: lpName,
+        created: true,
+      }
     }
 
-    // Create signal
+    if (!lp) {
+      return NextResponse.json(
+        { error: 'Failed to find or create LP' },
+        { status: 500 }
+      )
+    }
+
+    // Step 3: Check for duplicate signals
+    const existingSignals = await prisma.signal.findMany({
+      where: { lpId: lp.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // Check last 50 signals
+    })
+
+    const duplicateCheck = detectDuplicate(
+      { lpName: lp.name, summary, tags, url, weight },
+      existingSignals
+    )
+
+    if (duplicateCheck.isDuplicate) {
+      return NextResponse.json(
+        {
+          error: 'Duplicate signal detected',
+          reason: duplicateCheck.reason,
+          existingSignal: duplicateCheck.matchedSignal,
+          warnings: validationResult.warnings,
+        },
+        { status: 409 } // 409 Conflict
+      )
+    }
+
+    // Step 4: Create the signal
     const signal = await prisma.signal.create({
       data: {
         lpId: lp.id,
         summary,
-        tags: Array.isArray(tags) ? tags : [],
+        tags,
         url: url || null,
-        weight: weight || 1.0,
+        weight,
       },
     })
 
-    // Recompute score and message angle
+    // Step 5: Recompute score and message angle
     const allSignals = await prisma.signal.findMany({
       where: { lpId: lp.id },
     })
@@ -49,11 +119,20 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ signal, lp: updatedLP })
+    // Step 6: Return success response with validation info
+    return NextResponse.json({
+      success: true,
+      signal,
+      lp: updatedLP,
+      validation: {
+        warnings: validationResult.warnings,
+        lpMatch: lpMatchInfo,
+      },
+    })
   } catch (error) {
     console.error('Error ingesting signal:', error)
     return NextResponse.json(
-      { error: 'Failed to ingest signal' },
+      { error: 'Failed to ingest signal', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
