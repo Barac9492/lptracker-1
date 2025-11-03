@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LP {
+  id           String     @id @default(cuid())
+  name         String     @unique
+  contactName  String?
+  email        String?
+  geo          String?
+  strategy     String[]   @default([])
+  score        Float      @default(0)
+  messageAngle String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  signals      Signal[]
+  outreaches   Outreach[]
+
+  @@index([score])
+}
+
+model Signal {
+  id        String   @id @default(cuid())
+  lpId      String
+  summary   String
+  tags      String[] @default([])
+  url       String?
+  weight    Float    @default(1.0)
+  createdAt DateTime @default(now())
+
+  lp        LP       @relation(fields: [lpId], references: [id], onDelete: Cascade)
+
+  @@index([lpId])
+  @@index([createdAt])
+}
+
+model Outreach {
+  id        String   @id @default(cuid())
+  lpId      String
+  subject   String?
+  body      String?
+  channel   String   @default("email")
+  sentAt    DateTime @default(now())
+
+  lp        LP       @relation(fields: [lpId], references: [id], onDelete: Cascade)
+
+  @@index([lpId])
+}
