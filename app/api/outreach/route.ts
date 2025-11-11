@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const outreach = await prisma.outreach.create({
+    const outreach = await db.outreach.create({
       data: {
         lpId,
         subject: subject || null,

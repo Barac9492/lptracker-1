@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    const lp = await prisma.lP.upsert({
+    const lp = await db.lp.upsert({
       where: { name },
       update: {
         contactName: contactName || null,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,17 +18,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Get top 3 LPs
-    const top3 = await prisma.lP.findMany({
+    const top3 = await db.lp.findMany({
       orderBy: { score: 'desc' },
       take: 3,
-      select: {
-        id: true,
-        name: true,
-        score: true,
-        messageAngle: true,
-        contactName: true,
-        email: true,
-      },
     })
 
     // Send to Slack if webhook configured

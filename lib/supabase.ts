@@ -52,10 +52,10 @@ export type Signal = {
 export type Outreach = {
   id: string
   lpId: string
+  subject: string | null
+  body: string | null
+  channel: string
   sentAt: string
-  content: string
-  responseReceived: boolean
-  responseAt: string | null
 }
 
 // Helper functions for common operations
@@ -158,6 +158,42 @@ export const db = {
 
       if (error) throw error
       return count || 0
+    },
+
+    upsert: async (options: {
+      where: { name: string }
+      update: Partial<LP>
+      create: Partial<LP>
+    }) => {
+      // Try to find existing LP
+      const { data: existing } = await supabase
+        .from('LP')
+        .select('*')
+        .eq('name', options.where.name)
+        .single()
+
+      if (existing) {
+        // Update existing
+        const { data, error } = await supabase
+          .from('LP')
+          .update(options.update)
+          .eq('name', options.where.name)
+          .select()
+          .single()
+
+        if (error) throw error
+        return data as LP
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('LP')
+          .insert([options.create])
+          .select()
+          .single()
+
+        if (error) throw error
+        return data as LP
+      }
     },
   },
 

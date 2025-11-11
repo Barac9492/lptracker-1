@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { db } from '@/lib/supabase'
 import { scoreFromSignals, suggestAngle } from '@/lib/scoring'
 
 export async function POST(req: NextRequest) {
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get all signals for this LP
-    const signals = await prisma.signal.findMany({
+    const signals = await db.signal.findMany({
       where: { lpId },
     })
 
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const newAngle = suggestAngle(signals)
 
     // Update LP
-    const updatedLP = await prisma.lP.update({
+    const updatedLP = await db.lp.update({
       where: { id: lpId },
       data: {
         score: newScore,
